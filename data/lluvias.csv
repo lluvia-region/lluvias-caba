@@ -1,0 +1,21 @@
+fecha,estacion_id,estacion,lluvia_mm,traza,completo,metodo,desde_utc,hasta_utc
+2026-09-29,87582,Aeroparque Jorge Newbery,0.4,0,1,24h(6RRR-s1),2026-09-29T12:00Z,2026-09-30T12:00Z
+2026-09-29,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.8,0,1,24h(6RRR-s1),2026-09-29T12:00Z,2026-09-30T12:00Z
+2026-09-30,87582,Aeroparque Jorge Newbery,0.0,1,1,24h(6RRR-s1),2026-09-30T12:00Z,2026-10-01T12:00Z
+2026-09-30,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,1,1,24h(6RRR-s1),2026-09-30T12:00Z,2026-10-01T12:00Z
+2026-10-01,87582,Aeroparque Jorge Newbery,0.0,1,1,24h(6RRR-s1),2026-10-01T12:00Z,2026-10-02T12:00Z
+2026-10-01,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-01T12:00Z,2026-10-02T12:00Z
+2026-10-02,87582,Aeroparque Jorge Newbery,5.0,0,1,24h(6RRR-s1),2026-10-02T12:00Z,2026-10-03T12:00Z
+2026-10-02,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),10.0,0,1,24h(6RRR-s1),2026-10-02T12:00Z,2026-10-03T12:00Z
+2026-10-03,87582,Aeroparque Jorge Newbery,9.0,0,1,24h(6RRR-s1),2026-10-03T12:00Z,2026-10-04T12:00Z
+2026-10-03,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),10.0,0,1,24h(6RRR-s1),2026-10-03T12:00Z,2026-10-04T12:00Z
+2026-10-04,87582,Aeroparque Jorge Newbery,0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-04T12:00Z,2026-10-05T12:00Z
+2026-10-04,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-04T12:00Z,2026-10-05T12:00Z
+2026-10-05,87582,Aeroparque Jorge Newbery,0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-05T12:00Z,2026-10-06T12:00Z
+2026-10-05,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-05T12:00Z,2026-10-06T12:00Z
+2026-10-06,87582,Aeroparque Jorge Newbery,0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-06T12:00Z,2026-10-07T12:00Z
+2026-10-06,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-06T12:00Z,2026-10-07T12:00Z
+2026-10-07,87582,Aeroparque Jorge Newbery,26.0,0,1,24h(6RRR-s1),2026-10-07T12:00Z,2026-10-08T12:00Z
+2026-10-07,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),37.0,0,1,24h(6RRR-s1),2026-10-07T12:00Z,2026-10-08T12:00Z
+2026-10-08,87582,Aeroparque Jorge Newbery,0.3,0,1,24h(6RRR-s1),2026-10-08T12:00Z,2026-10-09T12:00Z
+2026-10-08,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.3,0,1,24h(6RRR-s1),2026-10-08T12:00Z,2026-10-09T12:00Z
