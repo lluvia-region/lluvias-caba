@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lluvias CABA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Encode+Sans+Semi+Condensed:wght@600;700&family=Encode+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: tablero de una columna — controles arriba, resumen, tres gráficos evolutivos, registro diario. */
+:root {
+  --bg: #eef1f4;
+  --panel: #fbfcfd;
+  --line: #d9dee4;
+  --grid: #e6eaef;
+  --ink: #0f1720;
+  --ink-2: #4a5562;
+  --ink-3: #75808c;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --hist: #b9c1ca;
+  --empty: #cfd5dc;
+  --chip: #e3e8ee;
+  --ok: #1f7a4a;
+  --warn: #9a6400;
+  --font-display: "Encode Sans Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Encode Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1217; --panel: #151b22; --line: #26303a; --grid: #1f2730;
+    --ink: #f2f5f8; --ink-2: #b7c0ca; --ink-3: #8592a0;
+    --s1: #3987e5; --s2: #d95926; --hist: #46525f; --empty: #2c3640; --chip: #222b35;
+    --ok: #4cc286; --warn: #e3a72f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1217; --panel: #151b22; --line: #26303a; --grid: #1f2730;
+  --ink: #f2f5f8; --ink-2: #b7c0ca; --ink-3: #8592a0;
+  --s1: #3987e5; --s2: #d95926; --hist: #46525f; --empty: #2c3640; --chip: #222b35;
+  --ok: #4cc286; --warn: #e3a72f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 16px; }
+@media (min-width: 720px) { .wrap { padding-inline: 28px; } }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 5vw, 40px); line-height: 1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { color: var(--s1); }
+.meta { font-family: var(--font-data); font-size: 12px; color: var(--ink-3); }
+.demo { font-size: 13px; color: var(--warn); border: 1px dashed currentColor; border-radius: 8px; padding: 8px 12px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+select, .btn, .seg button { font: 500 14px var(--font-body); color: var(--ink); }
+select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 30px 7px 10px; max-width: 100%; min-width: 0; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 5px 10px; border-radius: 6px; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.btn { background: var(--ink); color: var(--panel); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.dl { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.note { font-size: 13px; color: var(--ink-2); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.kpi h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.kpi .vals { display: grid; gap: 4px; }
+.kpi .v { display: flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.kpi .v b { font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: 700; }
+.kpi .v small { color: var(--ink-3); font-size: 12px; }
+.kpi .v.sec b { font-size: 20px; }
+.kpi .sub { font-size: 12px; color: var(--ink-3); }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; align-self: center; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.panel h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.panel .desc { font-size: 13px; color: var(--ink-3); margin: 2px 0 0; max-width: 65ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.legend i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.legend .ln { width: 18px; height: 0; border-top: 2px solid; }
+.legend .ln.dash { border-top-style: dashed; }
+.legend .bx { width: 10px; height: 10px; border-radius: 3px; }
+.small-title { font-size: 13px; color: var(--ink-2); margin: 10px 0 0; display: flex; align-items: center; gap: 8px; }
+.chart { position: relative; }
+svg { display: block; overflow: visible; max-width: 100%; }
+svg text { font-family: var(--font-data); font-size: 11px; fill: var(--ink-3); }
+svg .gl { stroke: var(--grid); }
+svg .base { stroke: var(--line); }
+.hit { fill: transparent; }
+.hit:hover + .bar { opacity: 0.72; }
+
+.years { display: flex; flex-wrap: wrap; gap: 6px; }
+.years button { font: 500 13px var(--font-data); border: 1px solid var(--line); background: transparent; color: var(--ink-2); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.years button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+.tablebox { max-height: 360px; overflow: auto; border-top: 1px solid var(--line); margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { position: sticky; top: 0; background: var(--panel); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); font-weight: 600; }
+td.mm { font-family: var(--font-data); }
+.pill { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--ink-2); }
+.pill.ok { color: var(--ok); }
+.pill.no { color: var(--warn); }
+.foot { font-size: 12px; color: var(--ink-3); max-width: 80ch; }
+.foot code { font-family: var(--font-data); }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--panel); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.45; opacity: 0; transition: opacity .08s; max-width: 260px; font-variant-numeric: tabular-nums; }
+#tip b { font-weight: 600; }
+#tip .r { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+#tip .r span:first-child { display: flex; align-items: center; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { #tip { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Lluvias <span>CABA</span></h1>
+    </div>
+    <div class="meta" id="meta">Cargando datos…</div>
+  </header>
+  <div class="demo" id="demo" hidden>Vista previa con datos de ejemplo generados al azar. En tu página de GitHub se muestran los datos reales del repositorio.</div>
+
+  <section class="controls" aria-label="Filtros">
+    <label class="field"><span>Estación</span><select id="est"></select></label>
+    <label class="field"><span>Comparar con</span><select id="cmp"></select></label>
+    <div class="field"><span>Período</span>
+      <div class="seg" role="group" aria-label="Período" id="periodo">
+        <button data-p="30">30 días</button>
+        <button data-p="90" aria-pressed="true">90 días</button>
+        <button data-p="365">12 meses</button>
+        <button data-p="anio">Año en curso</button>
+        <button data-p="todo">Todo</button>
+      </div>
+    </div>
+    <div class="dl">
+      <button class="btn ghost" id="dl-periodo" type="button">CSV del período</button>
+      <button class="btn" id="dl-todo" type="button">Descargar base completa</button>
+    </div>
+    <p class="note" id="dl-note" hidden></p>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Resumen del período"></section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="t-serie">Lluvia diaria</h2><p class="desc" id="d-serie"></p></div>
+    </div>
+    <div id="serie"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>Acumulado del año</h2><p class="desc" id="d-acum"></p></div>
+      <div class="legend" id="lg-acum"></div>
+    </div>
+    <div class="chart" id="acum"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>Mes a mes</h2><p class="desc" id="d-mes"></p></div>
+      <div class="years" id="years" role="group" aria-label="Año"></div>
+    </div>
+    <div class="legend" id="lg-mes" style="margin-bottom:4px"></div>
+    <div class="chart" id="mes"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>Registro diario</h2><p class="desc">Más reciente primero. Un día pluviométrico va de las 9 h de la fecha a las 9 h del día siguiente.</p></div>
+    </div>
+    <div class="tablebox"><table id="tabla"></table></div>
+  </section>
+
+  <p class="foot">Fuente: partes SYNOP de las estaciones del Servicio Meteorológico Nacional, consultados vía Ogimet. Valores en milímetros. “Traza” es lluvia menor a 0,1 mm. Los días sin datos completos no se cuentan en los totales y se marcan en el registro.</p>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(() => {
+const MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const CUM = [0,31,59,90,120,151,181,212,243,273,304,334];
+const $ = (id) => document.getElementById(id);
+const nf1 = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nf0 = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+const mm = (v) => v == null ? "—" : nf1.format(v);
+const DEMO = !!window.DATOS_EMBEBIDOS;
+const COL = ["var(--s1)", "var(--s2)"];
+
+let D, EST = {}, porEst = {}, FIN, INI;
+const st = { est: null, cmp: "", p: "90", anio: null };
+try { const s = JSON.parse(localStorage.getItem("lluvias-filtros") || "{}"); Object.assign(st, s); } catch (e) {}
+const guardar = () => { try { localStorage.setItem("lluvias-filtros", JSON.stringify(st)); } catch (e) {} };
+
+// ---------- fechas ----------
+const toD = (s) => new Date(s + "T12:00:00Z");
+const toS = (d) => d.toISOString().slice(0, 10);
+const add = (s, n) => { const d = toD(s); d.setUTCDate(d.getUTCDate() + n); return toS(d); };
+const larga = (s) => { const [a, m, d] = s.split("-"); return `${+d} ${MES[m - 1]} ${a}`; };
+const doy = (s) => { const m = +s.slice(5, 7), d = +s.slice(8, 10); return CUM[m - 1] + Math.min(d, m === 2 ? 28 : d) - 1; };
+function* dias(a, b) { for (let f = a; f <= b; f = add(f, 1)) yield f; }
+
+// ---------- carga ----------
+const fuente = DEMO ? Promise.resolve(window.DATOS_EMBEBIDOS) : fetch("datos.json", { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.json(); });
+fuente.then(init).catch(() => { $("meta").textContent = "Todavía no hay datos. Corré la tarea “Lluvia diaria” en GitHub Actions."; });
+
+function init(d) {
+  D = d;
+  for (const e of d.estaciones) { EST[e.id] = e; porEst[e.id] = new Map(); }
+  for (const [id, f, v, tr, c] of d.dias) if (porEst[id]) porEst[id].set(f, { mm: v, traza: !!tr, ok: !!c });
+  FIN = ""; INI = "9999";
+  for (const m of Object.values(porEst)) for (const f of m.keys()) { if (f > FIN) FIN = f; if (f < INI) INI = f; }
+  if (!EST[st.est]) st.est = d.estaciones[0].id;
+  if (st.cmp && (!EST[st.cmp] || st.cmp === st.est)) st.cmp = "";
+  $("demo").hidden = !DEMO;
+  const gen = new Date(d.generado_utc.replace("Z", ":00Z"));
+  $("meta").textContent = `Último día pluviométrico: ${larga(FIN)} · actualizado ${gen.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}`;
+  llenarSelects();
+  render();
+}
+
+function llenarSelects() {
+  $("est").innerHTML = D.estaciones.map(e => `<option value="${e.id}">${e.nombre}</option>`).join("");
+  $("est").value = st.est;
+  $("cmp").innerHTML = `<option value="">Ninguna</option>` + D.estaciones.filter(e => e.id !== st.est).map(e => `<option value="${e.id}">${e.nombre}</option>`).join("");
+  $("cmp").value = st.cmp;
+  $("cmp").disabled = D.estaciones.length < 2;
+  document.querySelectorAll("#periodo button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === st.p));
+}
+
+$("est").addEventListener("change", (e) => { st.est = e.target.value; if (st.cmp === st.est) st.cmp = ""; llenarSelects(); guardar(); render(); });
+$("cmp").addEventListener("change", (e) => { st.cmp = e.target.value; guardar(); render(); });
+document.querySelectorAll("#periodo button").forEach(b => b.addEventListener("click", () => {
+  st.p = b.dataset.p; guardar();
+  document.querySelectorAll("#periodo button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => D && render(), 150); });
+
+function rango() {
+  if (st.p === "todo") return [INI, FIN];
+  if (st.p === "anio") return [FIN.slice(0, 4) + "-01-01", FIN];
+  return [add(FIN, -(+st.p - 1)), FIN];
+}
+const sel = () => [st.est, ...(st.cmp ? [st.cmp] : [])];
+const corto = (id) => EST[id].corto || EST[id].nombre;
+
+function render() {
+  const [a, b] = rango();
+  renderKpis(a, b);
+  renderSerie(a, b);
+  renderAcum();
+  renderMes();
+  renderTabla(a, b);
+}
+
+// ---------- resumen ----------
+function stats(id, a, b) {
+  let tot = 0, conLluvia = 0, falta = 0, max = null, n = 0;
+  for (const f of dias(a, b)) {
+    const v = porEst[id].get(f);
+    n++;
+    if (!v || !v.ok) { falta++; continue; }
+    tot += v.mm;
+    if (v.mm >= 0.1) conLluvia++;
+    if (!max || v.mm > max.mm) max = { mm: v.mm, f };
+  }
+  return { tot, conLluvia, falta, max, n };
+}
+function renderKpis(a, b) {
+  const ids = sel();
+  const S = ids.map(id => stats(id, a, b));
+  const ult = ids.map(id => porEst[id].get(FIN));
+  const fila = (i, contenido, secundaria) =>
+    `<div class="v${secundaria ? " sec" : ""}">${ids.length > 1 ? `<span class="sw" style="background:${COL[i]}" title="${corto(ids[i])}"></span>` : ""}${contenido}</div>`;
+  const tiles = [
+    { t: `Lluvia en el período`, v: S.map((s, i) => fila(i, `<b>${mm(s.tot)}</b><small>mm</small>`, i > 0)),
+      sub: `${larga(a)} al ${larga(b)}` },
+    { t: "Días con lluvia", v: S.map((s, i) => fila(i, `<b>${s.conLluvia}</b><small>de ${s.n - s.falta} con datos</small>`, i > 0)),
+      sub: S.some(s => s.falta) ? `${S.map(s => s.falta).join(" / ")} día(s) sin datos completos` : "Todos los días con datos completos" },
+    { t: "Día más lluvioso", v: S.map((s, i) => fila(i, s.max && s.max.mm > 0 ? `<b>${mm(s.max.mm)}</b><small>mm · ${larga(s.max.f)}</small>` : `<b>—</b><small>sin lluvia</small>`, i > 0)),
+      sub: "Máximo diario dentro del período" },
+    { t: `Último día · ${larga(FIN)}`, v: ult.map((v, i) => fila(i, !v || !v.ok ? `<b>—</b><small>sin datos completos</small>` : v.traza ? `<b>Traza</b><small>&lt; 0,1 mm</small>` : `<b>${mm(v.mm)}</b><small>mm</small>`, i > 0)),
+      sub: "De 9 h a 9 h del día siguiente" },
+  ];
+  $("kpis").innerHTML = tiles.map(t => `<article class="kpi"><h3>${t.t}</h3><div class="vals">${t.v.join("")}</div><div class="sub">${t.sub}</div></article>`).join("");
+}
+
+// ---------- utilidades de gráfico ----------
+const ancho = (el) => Math.max(300, el.clientWidth || 900);
+function niceStep(max, ticks = 4) {
+  const raw = max / ticks, p = Math.pow(10, Math.floor(Math.log10(raw || 1))), n = raw / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+function barPath(x, y0, w, y) {
+  const h = y0 - y; if (h <= 0) return "";
+  const r = Math.min(4, w / 2, h);
+  return `M${x},${y0}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y0}Z`;
+}
+function ejeY(W, ml, mr, y, ymax, paso) {
+  let s = "";
+  for (let t = 0; t <= ymax + 1e-9; t += paso) {
+    s += `<line class="${t === 0 ? "base" : "gl"}" x1="${ml}" x2="${W - mr}" y1="${y(t)}" y2="${y(t)}"/>`;
+    s += `<text x="${ml - 6}" y="${y(t) + 4}" text-anchor="end">${nf0.format(t)}</text>`;
+  }
+  return s;
+}
+const tip = $("tip");
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + 14, y = ev.clientY - h - 10;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+  if (y < 8) y = ev.clientY + 16;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const hideTip = () => { tip.style.opacity = 0; };
+document.addEventListener("scroll", hideTip, { passive: true });
+
+// ---------- serie (diaria / semanal / mensual) ----------
+function agrupar(id, a, b, modo) {
+  const g = new Map();
+  for (const f of dias(a, b)) {
+    let k = f;
+    if (modo === "semana") { const d = toD(f), dw = (d.getUTCDay() + 6) % 7; k = add(f, -dw); if (k < a) k = a; }
+    if (modo === "mes") k = f.slice(0, 7);
+    const v = porEst[id].get(f);
+    const c = g.get(k) || { k, mm: 0, ok: 0, n: 0, traza: false };
+    c.n++;
+    if (v && v.ok) { c.ok++; c.mm += v.mm; c.traza = c.traza || v.traza; }
+    g.set(k, c);
+  }
+  return [...g.values()];
+}
+function renderSerie(a, b) {
+  const n = Math.round((toD(b) - toD(a)) / 864e5) + 1;
+  const modo = n <= 120 ? "dia" : n <= 400 ? "semana" : "mes";
+  $("t-serie").textContent = { dia: "Lluvia diaria", semana: "Lluvia semanal", mes: "Lluvia mensual" }[modo];
+  $("d-serie").textContent = { dia: "Milímetros por día pluviométrico.", semana: "Suma de cada semana (lunes a domingo).", mes: "Suma de cada mes." }[modo]
+    + " Las marcas grises al pie indican días o períodos sin datos completos.";
+  const ids = sel();
+  const series = ids.map(id => agrupar(id, a, b, modo));
+  let max = 0; series.forEach(s => s.forEach(c => { if (c.ok) max = Math.max(max, c.mm); }));
+  const box = $("serie"), W = ancho(box), H = W < 600 ? 150 : 180, ml = 40, mr = 8, mt = 10, mb = 24;
+  const paso = niceStep(Math.max(max, 5)), ymax = Math.ceil(Math.max(max, 5) / paso) * paso;
+  const y = (v) => mt + (H - mt - mb) * (1 - v / ymax), y0 = y(0);
+  const cnt = series[0].length, bw = (W - ml - mr) / cnt, gap = bw > 6 ? 2 : bw > 3 ? 1 : 0.4, w = Math.max(0.8, bw - gap);
+  const etiqueta = (c, i) => {
+    if (modo === "mes") return c.k.endsWith("-01") || cnt <= 24 ? (c.k.endsWith("-01") ? c.k.slice(0, 4) : MES[+c.k.slice(5) - 1]) : "";
+    const f = c.k, step = modo === "dia" ? (W < 600 ? 14 : 7) : (W < 600 ? 8 : 4);
+    if (modo === "dia" && i % step) return ""; if (modo === "semana" && i % step) return "";
+    return `${+f.slice(8)} ${MES[+f.slice(5, 7) - 1]}`;
+  };
+  box.innerHTML = ids.map((id, si) => {
+    let s = ejeY(W, ml, mr, y, ymax, paso);
+    series[si].forEach((c, i) => {
+      const x = ml + i * bw + gap / 2;
+      const lab = etiqueta(c, i);
+      if (lab && si === ids.length - 1) s += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${lab}</text>`;
+      const nom = modo === "dia" ? larga(c.k) : modo === "semana" ? `Semana del ${larga(c.k)}` : `${MES[+c.k.slice(5) - 1]} ${c.k.slice(0, 4)}`;
+      const val = !c.ok ? "sin datos completos" : (c.mm === 0 && c.traza ? "traza" : `${mm(c.mm)} mm`) + (c.ok < c.n ? ` <span style="opacity:.7">(${c.n - c.ok} día(s) sin datos)</span>` : "");
+      s += `<rect class="hit" x="${ml + i * bw}" y="${mt}" width="${bw}" height="${y0 - mt}" data-tip="<b>${corto(id)}</b><br>${nom}: ${val.replace(/"/g, "&quot;")}"/>`;
+      if (c.ok && c.mm > 0) s += `<path class="bar" fill="${COL[si]}" d="${barPath(x, y0, w, y(c.mm))}"/>`;
+      if (c.ok < c.n) s += `<rect x="${x}" y="${y0 + 2}" width="${w}" height="3" rx="1" fill="var(--empty)"/>`;
+    });
+    const head = ids.length > 1 ? `<p class="small-title"><span class="sw" style="background:${COL[si]}"></span>${EST[id].nombre}</p>` : "";
+    return `${head}<div class="chart"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${$("t-serie").textContent} en ${EST[id].nombre}">${s}</svg></div>`;
+  }).join("");
+  box.querySelectorAll(".hit").forEach(h => { h.addEventListener("mousemove", ev => showTip(ev, h.dataset.tip)); h.addEventListener("mouseleave", hideTip); });
+}
+
+// ---------- acumulado anual ----------
+function curvaAnual(id, anio) {
+  const out = new Array(365).fill(null);
+  let acc = 0, okDias = 0;
+  const fin = anio === +FIN.slice(0, 4) ? FIN : `${anio}-12-31`;
+  for (const f of dias(`${anio}-01-01`, fin)) {
+    const v = porEst[id].get(f);
+    if (v && v.ok) { acc += v.mm; okDias++; }
+    out[doy(f)] = acc;
+  }
+  return { out, okDias };
+}
+function aniosDe(id) { const s = new Set(); for (const f of porEst[id].keys()) s.add(+f.slice(0, 4)); return [...s].sort(); }
+function renderAcum() {
+  const id = st.est, actual = +FIN.slice(0, 4);
+  const anios = aniosDe(id);
+  const prev = anios.filter(a => a < actual).map(a => ({ a, ...curvaAnual(id, a) })).filter(c => c.okDias >= 300);
+  const cur = anios.includes(actual) ? { a: actual, ...curvaAnual(id, actual) } : null;
+  const prom = prev.length ? Array.from({ length: 365 }, (_, i) => prev.reduce((s, c) => s + (c.out[i] ?? 0), 0) / prev.length) : null;
+  $("d-acum").textContent = `${EST[id].nombre}. Milímetros acumulados desde el 1 de enero, comparados con años anteriores.`;
+  $("lg-acum").innerHTML = `<span><i class="ln" style="border-color:var(--s1)"></i>${actual}</span>`
+    + (prev.length ? `<span><i class="ln" style="border-color:var(--hist)"></i>Años anteriores</span><span><i class="ln dash" style="border-color:var(--ink-2)"></i>Promedio ${prev[0].a}–${prev[prev.length - 1].a}</span>` : "");
+  const box = $("acum"), W = ancho(box), H = W < 600 ? 220 : 280, ml = 46, mr = W < 600 ? 12 : 64, mt = 12, mb = 24;
+  let max = 10;
+  [...prev, ...(cur ? [cur] : [])].forEach(c => c.out.forEach(v => { if (v != null) max = Math.max(max, v); }));
+  const paso = niceStep(max), ymax = Math.ceil(max / paso) * paso;
+  const x = (i) => ml + (W - ml - mr) * i / 364, y = (v) => mt + (H - mt - mb) * (1 - v / ymax);
+  const linea = (arr) => { let d = "", on = false; arr.forEach((v, i) => { if (v == null) { on = false; return; } d += `${on ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; on = true; }); return d; };
+  let s = ejeY(W, ml, mr, y, ymax, paso);
+  CUM.forEach((c, m) => { if (W >= 600 || m % 2 === 0) s += `<text x="${x(c + 14)}" y="${H - 6}" text-anchor="middle">${MES[m]}</text>`; });
+  prev.forEach(c => { s += `<path d="${linea(c.out)}" fill="none" stroke="var(--hist)" stroke-width="1.5"/>`; });
+  if (prom) s += `<path d="${linea(prom)}" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  if (cur) {
+    s += `<path d="${linea(cur.out)}" fill="none" stroke="var(--s1)" stroke-width="2.5" stroke-linejoin="round"/>`;
+    const i = doy(FIN), v = cur.out[i];
+    if (v != null) {
+      s += `<circle cx="${x(i)}" cy="${y(v)}" r="4.5" fill="var(--s1)" stroke="var(--panel)" stroke-width="2"/>`;
+      if (W >= 600) s += `<text x="${x(i) + 8}" y="${y(v) - 8}" style="fill:var(--ink);font-weight:500">${nf0.format(v)} mm</text>`;
+    }
+  }
+  s += `<line id="xh" y1="${mt}" y2="${H - mb}" stroke="var(--ink-3)" stroke-width="1" opacity="0"/>`;
+  s += `<rect class="hit" id="acum-hit" x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}"/>`;
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Lluvia acumulada en el año">${s}</svg>`;
+  const hit = $("acum-hit"), xh = $("xh");
+  hit.addEventListener("mousemove", (ev) => {
+    const r = hit.getBoundingClientRect(), i = Math.max(0, Math.min(364, Math.round((ev.clientX - r.left) / r.width * 364)));
+    xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("opacity", 0.6);
+    let m = 11; while (CUM[m] > i) m--;
+    let h = `<b>${i - CUM[m] + 1} de ${MES[m]}</b>`;
+    const row = (col, lab, v, dash) => `<div class="r"><span><i class="ln${dash ? " dash" : ""}" style="display:inline-block;width:14px;border-top:2px ${dash ? "dashed" : "solid"} ${col}"></i>${lab}</span><span>${mm(v)} mm</span></div>`;
+    if (cur && cur.out[i] != null) h += row("var(--s1)", actual, cur.out[i]);
+    if (prom) h += row("var(--panel)", "Promedio", prom[i], true);
+    if (cur && cur.out[i] != null && prom) { const d = cur.out[i] - prom[i]; h += `<div style="opacity:.75;margin-top:2px">${d >= 0 ? "+" : "−"}${nf0.format(Math.abs(d))} mm ${d >= 0 ? "sobre" : "bajo"} el promedio</div>`; }
+    prev.slice().reverse().forEach(c => { h += row("var(--hist)", c.a, c.out[i]); });
+    showTip(ev, h);
+  });
+  hit.addEventListener("mouseleave", () => { hideTip(); xh.setAttribute("opacity", 0); });
+}
+
+// ---------- mes a mes ----------
+function totalMes(id, a, m) {
+  const ini = `${a}-${String(m + 1).padStart(2, "0")}-01`;
+  let fin = toS(new Date(Date.UTC(a, m + 1, 0, 12))); if (fin > FIN) fin = FIN;
+  if (ini > FIN) return null;
+  let t = 0, ok = 0, n = 0;
+  for (const f of dias(ini, fin)) { n++; const v = porEst[id].get(f); if (v && v.ok) { t += v.mm; ok++; } }
+  return ok ? { mm: t, falta: n - ok, parcial: fin < toS(new Date(Date.UTC(a, m + 1, 0, 12))) } : null;
+}
+function renderMes() {
+  const ids = sel(), anios = aniosDe(st.est);
+  if (!st.anio || !anios.includes(+st.anio)) st.anio = anios[anios.length - 1];
+  $("years").innerHTML = anios.map(a => `<button type="button" data-a="${a}" aria-pressed="${a === +st.anio}">${a}</button>`).join("");
+  $("years").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { st.anio = +b.dataset.a; guardar(); renderMes(); }));
+  const A = +st.anio;
+  const otros = anios.filter(a => a !== A);
+  const prom = Array.from({ length: 12 }, (_, m) => {
+    const vals = otros.map(a => totalMes(st.est, a, m)).filter(v => v && !v.parcial && v.falta < 5).map(v => v.mm);
+    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+  });
+  const datos = ids.map(id => Array.from({ length: 12 }, (_, m) => totalMes(id, A, m)));
+  $("d-mes").textContent = `Total de cada mes de ${A}` + (prom.some(v => v != null) ? `. La raya marca el promedio de ${EST[st.est].corto || EST[st.est].nombre} en los demás años.` : ".");
+  $("lg-mes").innerHTML = ids.map((id, i) => `<span><i class="bx" style="background:${COL[i]}"></i>${EST[id].nombre}</span>`).join("")
+    + (prom.some(v => v != null) ? `<span><i class="ln" style="border-color:var(--ink)"></i>Promedio otros años</span>` : "");
+  let max = 10;
+  datos.forEach(s => s.forEach(v => v && (max = Math.max(max, v.mm))));
+  prom.forEach(v => v != null && (max = Math.max(max, v)));
+  const box = $("mes"), W = ancho(box), H = W < 600 ? 200 : 240, ml = 40, mr = 8, mt = 10, mb = 24;
+  const paso = niceStep(max), ymax = Math.ceil(max / paso) * paso;
+  const y = (v) => mt + (H - mt - mb) * (1 - v / ymax), y0 = y(0);
+  const gw = (W - ml - mr) / 12, inner = gw * 0.7, bw = (inner - (ids.length - 1) * 2) / ids.length;
+  let s = ejeY(W, ml, mr, y, ymax, paso);
+  for (let m = 0; m < 12; m++) {
+    const gx = ml + m * gw + (gw - inner) / 2;
+    s += `<text x="${ml + m * gw + gw / 2}" y="${H - 6}" text-anchor="middle">${MES[m]}</text>`;
+    let tipH = `<b>${MES[m]} ${A}</b>`;
+    ids.forEach((id, i) => {
+      const v = datos[i][m];
+      tipH += `<div class="r"><span><span class="sw" style="background:${COL[i]}"></span>${corto(id)}</span><span>${v ? mm(v.mm) + " mm" : "—"}</span></div>`;
+      if (v && v.parcial) tipH += `<div style="opacity:.75">Mes en curso</div>`;
+      else if (v && v.falta) tipH += `<div style="opacity:.75">${v.falta} día(s) sin datos</div>`;
+    });
+    if (prom[m] != null) tipH += `<div class="r"><span>Promedio</span><span>${mm(prom[m])} mm</span></div>`;
+    s += `<rect class="hit" x="${ml + m * gw}" y="${mt}" width="${gw}" height="${y0 - mt}" data-tip="${tipH.replace(/"/g, "&quot;")}"/>`;
+    s += `<g class="bar">`;
+    ids.forEach((id, i) => {
+      const v = datos[i][m];
+      if (v && v.mm > 0) s += `<path fill="${COL[i]}" ${v.parcial ? 'fill-opacity="0.55"' : ""} d="${barPath(gx + i * (bw + 2), y0, bw, y(v.mm))}"/>`;
+    });
+    if (prom[m] != null) s += `<line x1="${gx - 3}" x2="${gx + inner + 3}" y1="${y(prom[m])}" y2="${y(prom[m])}" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>`;
+    s += `</g>`;
+  }
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Lluvia mensual ${A}">${s}</svg>`;
+  box.querySelectorAll(".hit").forEach(h => { h.addEventListener("mousemove", ev => showTip(ev, h.dataset.tip)); h.addEventListener("mouseleave", hideTip); });
+}
+
+// ---------- tabla ----------
+function celda(v) {
+  if (!v || !v.ok) return `<td class="mm">—</td>`;
+  return `<td class="mm">${v.traza && v.mm === 0 ? "traza" : mm(v.mm)}</td>`;
+}
+function renderTabla(a, b) {
+  const ids = sel();
+  let h = `<thead><tr><th>Fecha</th>${ids.map(id => `<th>${corto(id)} (mm)</th>`).join("")}<th>Estado</th></tr></thead><tbody>`;
+  const fs = [...dias(a, b)].reverse();
+  for (const f of fs) {
+    const vs = ids.map(id => porEst[id].get(f));
+    const incompletos = vs.filter(v => !v || !v.ok).length;
+    h += `<tr><td>${larga(f)}</td>${vs.map(celda).join("")}<td><span class="pill ${incompletos ? "no" : "ok"}">${incompletos ? "Sin datos completos" : "Completo"}</span></td></tr>`;
+  }
+  $("tabla").innerHTML = h + "</tbody>";
+}
+
+// ---------- CSV ----------
+function csv(ids, a, b) {
+  const filas = [["fecha", "estacion_id", "estacion", "lluvia_mm", "traza", "completo"]];
+  for (const id of ids) for (const [f, v] of [...porEst[id].entries()].sort()) {
+    if (f < a || f > b) continue;
+    filas.push([f, id, `"${EST[id].nombre.replace(/"/g, '""')}"`, v.mm == null ? "" : v.mm.toFixed(1), +v.traza, +v.ok]);
+  }
+  return "﻿" + filas.map(r => r.join(",")).join("\r\n");
+}
+function bajar(texto, nombre) {
+  if (DEMO) {
+    const n = $("dl-note"); n.hidden = false;
+    n.textContent = `En tu página de GitHub este botón descarga “${nombre}”. En esta vista previa las descargas están desactivadas.`;
+    return;
+  }
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" })), download: nombre });
+  document.body.appendChild(a); a.click(); a.remove();
+}
+$("dl-periodo").addEventListener("click", () => { const [a, b] = rango(); bajar(csv(sel(), a, b), `lluvias_${sel().join("-")}_${a}_${b}.csv`); });
+$("dl-todo").addEventListener("click", () => bajar(csv(D.estaciones.map(e => e.id), INI, FIN), "lluvias_caba_completo.csv"));
+})();
+</script>
+</body>
+</html>

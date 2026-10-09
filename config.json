@@ -1,0 +1,20 @@
+{
+  "estaciones": [
+    {
+      "id": "87585",
+      "nombre": "Buenos Aires - Observatorio Central (Villa Ortúzar)",
+      "corto": "Observatorio Central",
+      "lat": -34.587,
+      "lon": -58.483
+    },
+    {
+      "id": "87582",
+      "nombre": "Aeroparque Jorge Newbery",
+      "corto": "Aeroparque",
+      "lat": -34.559,
+      "lon": -58.416
+    }
+  ],
+  "dias_a_reprocesar": 10,
+  "pausa_entre_descargas_seg": 15
+}
