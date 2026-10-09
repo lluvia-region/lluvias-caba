@@ -1,0 +1,18 @@
+name: Diagnóstico
+
+# Muestra los partes SYNOP crudos de ayer y cómo los interpreta el programa.
+# No guarda nada. Sirve para revisar si algo dejó de funcionar.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -t . -v
+      - run: python -m lluvias diagnostico
