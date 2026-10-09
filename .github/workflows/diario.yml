@@ -1,0 +1,43 @@
+name: Lluvia diaria
+
+on:
+  schedule:
+    # 13:40 UTC = 10:40 hora argentina, después del parte de las 9 h.
+    # GitHub puede demorar el arranque unos minutos u horas en momentos de mucha carga.
+    - cron: "40 13 * * *"
+  workflow_dispatch: {}   # botón "Run workflow" para correrlo a mano
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  recolectar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Descargar partes y calcular lluvia
+        run: python -m lluvias diario
+
+      - name: Guardar cambios en el repositorio
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs/datos.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "Datos de lluvia $(date -u +%Y-%m-%d)"
+            git pull --rebase
+            git push
+          fi
