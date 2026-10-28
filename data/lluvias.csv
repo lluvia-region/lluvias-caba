@@ -781,3 +781,5 @@ fecha,estacion_id,estacion,lluvia_mm,traza,completo,metodo,desde_utc,hasta_utc
 2026-10-25,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-25T12:00Z,2026-10-26T12:00Z
 2026-10-26,87582,Aeroparque Jorge Newbery,0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-26T12:00Z,2026-10-27T12:00Z
 2026-10-26,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-26T12:00Z,2026-10-27T12:00Z
+2026-10-27,87582,Aeroparque Jorge Newbery,0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-27T12:00Z,2026-10-28T12:00Z
+2026-10-27,87585,Buenos Aires - Observatorio Central (Villa Ortúzar),0.0,0,1,6h(6RRR-s1) + 6h(6RRR-s1) + 6h(6RRR-s1) + 6h(iR=3),2026-10-27T12:00Z,2026-10-28T12:00Z
